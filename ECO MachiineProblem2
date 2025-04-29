@@ -1,0 +1,151 @@
+import java.io.*;
+
+//define public class
+public class MachineProblem2 {
+
+	//This is a public method used to initiate the encryption process.
+    public void encrypt(String keyFile, String messageFile, String encryptedMessageFile) throws IOException {
+        process(keyFile, messageFile, encryptedMessageFile, true);
+    }
+    //This is a public method used to initiate the Decryption process.
+    public void decrypt(String keyFile, String encryptedMessageFile, String messageFile) throws IOException {
+        process(keyFile, encryptedMessageFile, messageFile, false);
+    }
+    /* Handles the core logic for both encryption and decryption.
+    Reads input and key files, performs the Vigenère transformation, and writes the output.*/
+    private void process(String keyFile, String inputFile, String outputFile, boolean encrypt) throws IOException {
+        String mode = System.getProperty("key.square", "alpha");
+        boolean binary = "binary".equalsIgnoreCase(mode);
+
+        byte[] key = readBytes(keyFile);
+        byte[] input = readBytes(inputFile);
+        byte[] output = vigenere(input, key, encrypt, binary);
+
+        writeBytes(outputFile, output);
+    }
+    /** Reads the entire content of a file into a byte array.
+     * Uses a buffer for efficient reading.*/
+    private byte[] readBytes(String path) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (InputStream in = new FileInputStream(path)) {
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+        }
+        return baos.toByteArray();
+    }
+    //Writes a byte array to a file
+    private void writeBytes(String path, byte[] data) throws IOException {
+        try (OutputStream out = new FileOutputStream(path)) {
+            out.write(data);
+        }
+    }
+    /* Performs the Vigenère cipher operation (encryption or decryption) on a byte array.
+     * Supports both alphabetic (A-Z) and binary (0-255) modes.*/
+    private byte[] vigenere(byte[] input, byte[] key, boolean encrypt, boolean binary) {
+       /* Determine the modulus for the calculation based on the mode.
+        * 256 for binary (all byte values), 26 for alpha (letters A-Z) */
+    	int mod = binary ? 256 : 26;
+        
+        // If not in binary mode, filter the input to keep only upper-case letters.
+        if (!binary) {
+            input = filterAlpha(input);
+        }
+        // Create the output byte array with the same length as the (potentially filtered) input.
+        byte[] output = new byte[input.length];
+        // Iterate through each byte of the input.
+        for (int i = 0; i < input.length; i++) {
+            int inputVal = input[i] & 0xFF; // Get the integer value of the input byte (using & 0xFF to handle signed bytes).
+            /* Get the integer value of the corresponding key byte (using modulo for key wrapping).
+             & 0xFF handles signed bytes.*/
+            int keyVal = key[i % key.length] & 0xFF;
+         // If in alphabetic mode, shift values so 'A' is 0, 'B' is 1, etc.
+            if (!binary) {
+                keyVal -= 'A';
+                inputVal -= 'A';
+            }
+
+            int result;// Variable to store the result of the shift.
+            if (encrypt) {
+            	// Encryption: (input value + key value) modulo modulus
+                result = (inputVal + keyVal) % mod;
+            } else {
+                result = (inputVal - keyVal + mod) % mod;
+                /*Decryption: (input value - key value + modulus) modulo modulus
+                 Adding mod before % to ensure a non-negative result for decryption.*/
+            }
+
+            if (!binary) {
+                result += 'A';
+            }
+            output[i] = (byte) result;
+        }
+        return output;
+    }
+    /* Filters a byte array, keeping only upper-case English letters (A-Z)
+     * and converting lower-case letters (a-z) to upper-case. Other characters are discarded.
+     * Used only in alphabetic mode.*/
+    private byte[] filterAlpha(byte[] input) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(); // Use ByteArrayOutputStream to build the filtered output.
+        // Iterate through each byte in the input.
+        for (byte b : input) {
+            char c = (char) b; // Convert the byte to a character.
+            if (c >= 'A' && c <= 'Z') {
+                baos.write(b); // If upper-case, add the original byte to the output.
+            }
+         // Check if the character is a lower-case letter.
+            else if (c >= 'a' && c <= 'z') {
+                baos.write((byte) (c - 'a' + 'A'));// If lower-case, convert it to upper-case and add the resulting byte.
+            }
+        }
+        return baos.toByteArray(); // Return the accumulated filtered bytes as a byte array.
+    }
+
+    // === MAIN METHOD for full testing ===
+    //Main method to demonstrate the encryption and decryption process.
+    public static void main(String[] args) throws IOException {
+        // Choose mode: "alpha" (default) or "binary"
+        System.setProperty("key.square", "alpha");
+
+        // Create example files
+        createExampleFile("key.txt", "SECRET");
+        createExampleFile("message.txt", "GREATPLACETOWORK!");
+
+        MachineProblem2 cipher = new MachineProblem2();
+        
+        // Encrypt the message
+        cipher.encrypt("key.txt", "message.txt", "encrypted.txt");
+        System.out.println("Encryption done. See encrypted.txt");
+
+        // Decryption of the message
+        cipher.decrypt("key.txt", "encrypted.txt", "decrypted.txt");
+        System.out.println("Decryption done. See decrypted.txt");
+
+        // (Optional) print decrypted message
+        String decryptedMessage = new String(readFileBytes("decrypted.txt"), "UTF-8");
+        System.out.println("\nDecrypted text:\n" + decryptedMessage);
+    }
+
+    private static void createExampleFile(String filename, String content) throws IOException {
+    	/* Use try-with-resources for proper closing of streams.
+         Use OutputStreamWriter with UTF-8 encoding for writing text.*/
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(filename), "UTF-8")) {
+            writer.write(content);// Write the content string to the file.
+        }
+    }
+    // Use ByteArrayOutputStream to accumulate bytes read from the file.
+    private static byte[] readFileBytes(String filename) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (InputStream in = new FileInputStream(filename)) {
+            byte[] buffer = new byte[4096];// Buffer for reading chunks.
+            int read;
+            // Read from the stream into the buffer until the end.
+            while ((read = in.read(buffer)) != -1) {
+                baos.write(buffer, 0, read);
+            }
+        }
+        return baos.toByteArray();// Return the accumulated bytes.
+    }
+}
