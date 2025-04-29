@@ -1,0 +1,79 @@
+//MachineProblem1 in Java
+import java.util.ArrayList;
+import java.util.Scanner;
+
+public class MachineProblem1 {
+	//Use to ope1
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        boolean newResponse = true;
+        
+       while (newResponse) {
+        System.out.print("Enter a number (n): ");// Give user a chance to put their input (only numerical)
+
+        try {
+            int n = scanner.nextInt();
+
+            if (n <= 0) {
+                System.out.println("Please enter a positive integer.");// A basic checker for user to only type real numbers
+            } else {
+                generateSequence(n);
+            }
+
+        } catch (Exception e) {
+            System.out.println("Invalid input. Please enter a valid integer.");// Another checker for user to type numbers only
+        } finally {
+            scanner.nextLine(); // Aim to clear the invalid input
+        }
+        System.out.println("Would You Like to try another Number? (Y/N): "); //Give user an option to put another response
+        String response = scanner.next().toLowerCase();
+      /*if y, means the user can have one more response, if they choose n or other character, the program will be closed */
+        if (!response.equals("y")) {
+            newResponse = false; //if y, means the user can have one more response
+            System.out.println("Program ended.");
+        }
+    }
+    scanner.close();
+//This section generates the Sequence
+}
+    public static void generateSequence(int n) {
+        ArrayList<Integer> sequence = new ArrayList<Integer>();
+        sequence.add(n);
+
+        while (true) {
+            // Apply rule based on even or odd
+            if (n % 2 == 0) {
+                n = n / 2; //If n is even
+            } else {
+                n = 3 * n + 1; //If n is odd
+            }
+            sequence.add(n);
+            // Check if the last 3 values are repeating
+            if (sequence.size() >= 6) {
+                int size = sequence.size();
+                int a1 = sequence.get(size - 1);
+                int a2 = sequence.get(size - 2);
+                int a3 = sequence.get(size - 3);
+                int b1 = sequence.get(size - 4);
+                int b2 = sequence.get(size - 5);
+                int b3 = sequence.get(size - 6);
+
+                if (a1 == b1 && a2 == b2 && a3 == b3) {
+                    break;
+                }
+            }
+        }
+
+        // Print the sequence
+        for (int i = 0; i < sequence.size(); i++) {
+            System.out.print(sequence.get(i));
+            if (i < sequence.size() - 1) {
+                System.out.print(", ");
+            }
+        }
+        System.out.println(); // Final line break
+        
+        
+    }
+}
+
