@@ -1,2 +1,2 @@
 # Job-Entrance-Exams
-ECo Java Exam
+This is intended for uploading codes that I created for entrance exams
